@@ -1,0 +1,2 @@
+parameters:
+  aws_service_connection: '0d40e28d-0b64-4e2e-9091-2ccc75f7bfc1' #this is the service connection id you created on azure devops
