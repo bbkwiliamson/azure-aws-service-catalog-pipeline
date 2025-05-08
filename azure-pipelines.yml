@@ -1,0 +1,62 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - main  # Trigger the pipeline when changes are detected to the main branch
+      - main-gateway
+  batch: true
+pr: none  
+
+pool:
+  vmImage: 'ubuntu-latest'  # Use Ubuntu image for the build agent
+
+variables:
+  AWS_REGION: "af-south-1"  # AWS Region
+  AZURE_SERVICE_CONNECTION_NAME: "azure_aws_connection_prod" #this is found or set in azure devops service connection, you give it this name and it will need aws access key and secret key of the account you want to deploy to
+  
+  #SERVICE CATALOG
+  SC_PRODUCT_ID: "prod-gcp2on6naayww" #service catalog product
+  SC_PRODUCT_VERSION_ID: "pa-ee7cjwanhivcy" #service catalog product version used
+  ENDPOINT_SERVICE: "DynamoDB"
+  ENABLE_PRIVATE_DNS: "false"
+  ENV: "PROD"
+  ALLOWED_CIDR1: "your vpc cidr here"
+  ALLOWED_CIDR2: ""
+  ALLOWED_CIDR3: ""
+  ApplicationName: "azure-aws-service-catalog"
+  RemedyGroup: "BBKGroup"
+  CalloutGroup: "BBKGroup"
+  TeamEmail: "bbkgroup@bbkgroup.onmicrosoft.com"
+
+  #VPC AND SUBNETS
+  VPC_ID_CMP: "vpc-id"
+  SUBNETS_CMP: "subnet-id,subnet-id"
+
+jobs:
+- job: Trigger_ServiceCatalog
+  displayName: 'AWS-ServiceCatalog: Apply Infrastructure'
+  steps:
+  
+    - checkout: self  # Checkout code
+
+    #setting up terraform and applying changes
+    - template: templates/aws-step.yml
+      parameters:
+        aws_service_connection: $(AZURE_SERVICE_CONNECTION_NAME)
+        aws_region: $(AWS_REGION)
+    # Provision for CMP VPC
+    - template: templates/provision-sc.yml
+      parameters:
+        VpcId: $(VPC_ID_CMP)
+        SubnetIds: $(SUBNETS_CMP)
+        buildId: $(Build.BuildId)
+        EndpointServiceName: $(ENDPOINT_SERVICE)
+        Environment: $(ENV)
+        ApplicationName: $(ApplicationName)
+        RemedyGroup: $(RemedyGroup)
+        CalloutGroup: $(CalloutGroup)
+        TeamEmail: $(TeamEmail)
+        Region: $(AWS_REGION)
+        InboundCIDR1: $(ALLOWED_CIDR1)
+        InboundCIDR2: $(ALLOWED_CIDR2)
+        InboundCIDR3: $(ALLOWED_CIDR3)
