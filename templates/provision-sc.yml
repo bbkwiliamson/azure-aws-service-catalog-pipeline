@@ -1,0 +1,50 @@
+parameters:
+  - name: VpcId
+    type: string
+  - name: SubnetIds
+    type: string
+  - name: buildId
+    type: string
+  - name: EndpointServiceName
+    type: string
+  - name: Environment
+    type: string
+  - name: ApplicationName
+    type: string
+  - name: RemedyGroup
+    type: string
+  - name: CalloutGroup
+    type: string
+  - name: TeamEmail
+    type: string
+  - name: Region
+    type: string
+  - name: InboundCIDR1
+    type: string
+  - name: InboundCIDR2
+    type: string
+  - name: InboundCIDR3
+    type: string
+
+steps:
+  - checkout: self  # Checkout code (if required, you can omit if not needed)
+
+  # Ensure AWS CLI is installed before running the provisioning command
+  - script: |
+      echo "Checking AWS CLI version..."
+      aws --version
+    displayName: 'Verify AWS CLI Installation'
+    
+  - task: AWSCLI@1
+    inputs:
+      awsCredentials: $(AZURE_SERVICE_CONNECTION_NAME)
+      regionName: $(AWS_REGION)
+      awsCommand: 'servicecatalog'
+      awsSubCommand: 'provision-product'
+      awsArguments: >
+        --product-id "$(SC_PRODUCT_ID)"
+        --provisioning-artifact-id "$(SC_PRODUCT_VERSION_ID)"
+        --provisioned-product-name "Azure-AWS-VPCEndpoint-PRODUCT-${{ parameters.buildId }}"
+        --provisioning-parameters "[ { \"Key\": \"EndpointServiceName\", \"Value\": \"${{ parameters.EndpointServiceName }}\" },{ \"Key\": \"Region\", \"Value\": \"${{ parameters.Region }}\" },{ \"Key\": \"VpcId\", \"Value\": \"${{ parameters.VpcId }}\" },{ \"Key\": \"SubnetIds\", \"Value\": \"${{ parameters.SubnetIds }}\" },{ \"Key\": \"InboundCIDR1\", \"Value\": \"${{ parameters.InboundCIDR1 }}\" },{ \"Key\": \"InboundCIDR2\", \"Value\": \"${{ parameters.InboundCIDR2 }}\" },{ \"Key\": \"InboundCIDR3\", \"Value\": \"${{ parameters.InboundCIDR3 }}\" },{ \"Key\": \"Environment\", \"Value\": \"${{ parameters.Environment }}\" },{ \"Key\": \"ApplicationName\", \"Value\": \"${{ parameters.ApplicationName }}\" },{ \"Key\": \"RemedyGroup\", \"Value\": \"${{ parameters.RemedyGroup }}\" },{ \"Key\": \"CalloutGroup\", \"Value\": \"${{ parameters.CalloutGroup }}\" },{ \"Key\": \"TeamEmail\", \"Value\": \"${{ parameters.TeamEmail }}\" }]"
+        --tags "[{ \"Key\": \"Project\", \"Value\": \"ServiceCatalogPipeline\" },{ \"Key\": \"Environment\", \"Value\": \"$(ENV)\" },{ \"Key\": \"Owner\", \"Value\": \"PBBDigitalPlatforms-BBKGroup\" },{ \"Key\": \"Tier\", \"Value\": \"MCA\" },{ \"Key\": \"E-Mail\", \"Value\": \"bbkgroup@bbkgroup.onmicrosoft.com\" },{ \"Key\": \"TCKey\", \"Value\": \"TC01191\" },{ \"Key\": \"UTRKey\", \"Value\": \"UTR06953\" },{ \"Key\": \"GroupName\", \"Value\": \"bbkgroup\" }]"
+    displayName: "AWS VPCEndpoint SCProduct for ${{ parameters.VpcId }}"
